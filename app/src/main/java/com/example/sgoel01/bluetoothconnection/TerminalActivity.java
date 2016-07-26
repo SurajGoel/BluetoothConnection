@@ -303,8 +303,7 @@ public class TerminalActivity extends AppCompatActivity
       /*  tvTerminal.append(getString(R.string.terminal_message_template,
                 bluetoothSerial.getConnectedDeviceName(),
                 message));*/
-        tvTerminal.append(getString(R.string.terminal_message_template,
-                message));
+        tvTerminal.append(getString(message));
         svTerminal.post(scrollTerminalToBottom);
     }
 
