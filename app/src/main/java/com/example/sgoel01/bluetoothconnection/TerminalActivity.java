@@ -1,4 +1,5 @@
-package com.example.sgoel01.bluetoothconnection;
+package com.example.sgoel01.newbluetoothconnection;
+
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -6,6 +7,7 @@ import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -13,9 +15,11 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup.LayoutParams;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -23,6 +27,8 @@ import android.widget.Toast;
 import com.macroyau.blue2serial.BluetoothDeviceListDialog;
 import com.macroyau.blue2serial.BluetoothSerial;
 import com.macroyau.blue2serial.BluetoothSerialListener;
+
+import java.util.ArrayList;
 
 /**
  * This is an example Bluetooth terminal application built using the Blue2Serial library.
@@ -39,8 +45,10 @@ public class TerminalActivity extends AppCompatActivity
     private ScrollView svTerminal;
     private TextView tvTerminal;
     private EditText etSend;
-    private Button bt1,bt2,bt3;
+    private Button bt1,bt2,bt3,newButt;
     private MenuItem actionConnect, actionDisconnect;
+    private ArrayList<String> responses = new ArrayList();
+    private LinearLayout linearLayout;
 
     private boolean crlf = false;
 
@@ -66,7 +74,7 @@ public class TerminalActivity extends AppCompatActivity
         bt3.setOnClickListener(this);
         // ATTRIBUTES SET
 
-
+        linearLayout = (LinearLayout) findViewById(R.id.terminalLayout);
         svTerminal = (ScrollView) findViewById(R.id.terminal);
         tvTerminal = (TextView) findViewById(R.id.tv_terminal);
         etSend = (EditText) findViewById(R.id.et_send);
@@ -297,14 +305,31 @@ public class TerminalActivity extends AppCompatActivity
         updateBluetoothState();
     }
 
+    private boolean isFirstMess=true;
+    private int commandNumber = 1;
+    private long currTime,timeout=0;
+    private boolean isThreadRunning = false;
+    private String command="";
     @Override
     public void onBluetoothSerialRead(String message) {
         // Print the incoming message on the terminal screen
       /*  tvTerminal.append(getString(R.string.terminal_message_template,
                 bluetoothSerial.getConnectedDeviceName(),
                 message));*/
-        tvTerminal.append(getString(message));
-        svTerminal.post(scrollTerminalToBottom);
+        timeout=System.currentTimeMillis()+1000;
+        command+=message;
+        if(isThreadRunning == false) countDown.start();
+
+       /* char[] mess = message.toCharArray();
+        for(int index=0 ; index<mess.length ; index++) {
+            if(Character.getNumericValue(mess[index]) == commandNumber) {
+                addButtontoGUI(command);
+                commandNumber++;
+                command="";
+            }
+            else command+=mess[index];
+        }
+        svTerminal.post(scrollTerminalToBottom);*/
     }
 
     @Override
@@ -333,5 +358,47 @@ public class TerminalActivity extends AppCompatActivity
             svTerminal.fullScroll(ScrollView.FOCUS_DOWN);
         }
     };
+
+    private final Thread countDown = new Thread(new Runnable() {
+        @Override
+        public void run() {
+            isThreadRunning=true;
+            while (System.currentTimeMillis()<timeout) {
+            }
+            isThreadRunning = false;
+            addtoGUI();
+        }
+    });
+
+    private void addtoGUI() {
+        String temp = command;
+        command="";
+        char[] array = temp.toCharArray();
+        boolean onePassed=false;
+        String line="";
+        for(int i=0 ; i<array.length ; i++) {
+
+            if(array[i] == '\n') {
+                if(onePassed==false) onePassed=true;
+                else {
+                    addButtonToGUI(line);
+                    line="";
+                }
+                continue;
+            }
+            line+=array[i];
+        }
+    }
+
+    private int idNumber=0;
+    private void addButtonToGUI(String line) {
+        Button dynamicBtn = new Button(this);
+        dynamicBtn.getLayoutParams().width = LayoutParams.WRAP_CONTENT;
+        dynamicBtn.getLayoutParams().height = LayoutParams.WRAP_CONTENT;
+        dynamicBtn.setId(idNumber);
+        dynamicBtn.setOnClickListener(this);
+        linearLayout.addView(dynamicBtn);
+    }
+
 
 }
